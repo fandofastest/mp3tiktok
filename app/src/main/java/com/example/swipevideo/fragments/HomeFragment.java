@@ -48,6 +48,7 @@ public class HomeFragment extends Fragment {
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    boolean scrolling=false;
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -102,20 +103,40 @@ public class HomeFragment extends Fragment {
         ViewPager2 viewPager2 = view.findViewById(R.id.videosViewpager);
         viewPager2.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+                Log.e("onPageScrolled", String.valueOf(position));
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+                scrolling=true;
+                Log.e("onPageSelected", String.valueOf(scrolling));
+
+            }
+
+            @Override
             public void onPageSelected(int position) {
-                videoAdapter.notifyDataSetChanged();
-                playmusic(MusicService.listtopsong,position);
-                progressBar.setVisibility(View.VISIBLE);
-                super.onPageSelected(position);
+
+                if (scrolling){
+                    playmusic(MusicService.listtopsong,position);
+                    scrolling=false;
+                }
+
 
             }
         });
         videoAdapter = new VideoAdapter(getContext(),MusicService.listtopsong,listvideo);
         viewPager2.setAdapter(videoAdapter);
-       getsongs("via vallen","search");
+
+        if (!MusicService.PLAYERSTATUS.equals("PLAYING")){
+            getsongs("via vallen","search");
+        }
+
+
 
     }
     public void playmusic (List<MusicItem> listsong,int position){
+        progressBar.setVisibility(View.VISIBLE);
 
         MusicService.currentlist=listsong;
 
@@ -170,6 +191,7 @@ public class HomeFragment extends Fragment {
 
 
                             MusicService.listtopsong.add(listModalClass);
+                            MusicService.currentlist.add(listModalClass);
 //
 
 

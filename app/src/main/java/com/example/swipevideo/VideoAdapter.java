@@ -56,7 +56,7 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
                 .centerCrop()
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .into(holder.imageView);
-        Log.e("errr", String.valueOf(position));
+//        Log.e("errr", String.valueOf(position));
 
 
     }

@@ -27,12 +27,20 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     BottomNavigationView bottomNavigation;
     HomeFragment homeFragment;
+    SearchFragment searchFragment;
+    PlaylistsFragment playlistsFragment;
+    String CURRENTVIEW="HOME";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         getlocalbroadcaster();
+
+
         homeFragment=new HomeFragment();
+        searchFragment= new SearchFragment();
+        playlistsFragment=new PlaylistsFragment();
         getFragmentPage(homeFragment);
          bottomNavigation = findViewById(R.id.nav_view);
         bottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -44,15 +52,30 @@ public class MainActivity extends AppCompatActivity {
                 //Menantukan halaman Fragment yang akan tampil
                 switch (item.getItemId()){
                     case R.id.nav_home:
-                        fragment = new HomeFragment();
+                        if (CURRENTVIEW.equals("HOME"))
+                        {
+                            if (MusicService.PLAYERSTATUS.equals("PLAYING")){
+                                pause();
+                            }
+                            else {
+                                resume();
+                            }
+                        }
+                        else {
+                            fragment = homeFragment;
+                            CURRENTVIEW="HOME";
+                        }
                         break;
 
                     case R.id.nav_search:
-                        fragment = new SearchFragment();
+                        fragment = searchFragment;
+
+                        CURRENTVIEW="SEARCH";
                         break;
 
                     case R.id.nav_playlists:
-                        fragment = new PlaylistsFragment();
+                        fragment = playlistsFragment;
+                        CURRENTVIEW="PLAYLISTS";
                         break;
                 }
                 return getFragmentPage(fragment);
@@ -60,6 +83,33 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+
+
+    public void pause(){
+        bottomNavigation.getMenu().getItem(0).setIcon(R.drawable.ic_baseline_play_arrow_24);
+        Intent intent = new Intent("musicplayer");
+        intent.putExtra("status", "pause");
+        LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+    }
+
+    public void resume(){
+        bottomNavigation.getMenu().getItem(0).setIcon(R.drawable.ic_baseline_pause_24);
+        if (MusicService.PLAYERSTATUS.equals("NULL")){
+          homeFragment.playmusic(MusicService.listtopsong,0);
+        }
+        else {
+            Intent intent = new Intent("musicplayer");
+
+            intent.putExtra("status", "resume");
+            LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(intent);
+        }
+
+
+
+
+
+    }
+
 
     public void getlocalbroadcaster(){
         LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(new BroadcastReceiver() {
@@ -77,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
                 else if (status.equals("pause")){
                     bottomNavigation.getMenu().getItem(0).setIcon(R.drawable.ic_baseline_play_arrow_24);
                 }
+
 
             }
         }, new IntentFilter("musicplayer"));

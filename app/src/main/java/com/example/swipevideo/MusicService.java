@@ -24,7 +24,7 @@ public class MusicService extends Service {
     public static List<MusicItem> listplaylist = new ArrayList<>();
     public static List<MusicItem> currentlist = new ArrayList<>();
 //    public static List<MusicSongOffline> currentlistoffline = new ArrayList<>();
-    public  static String PLAYERSTATUS="STOP",REPEAT="OFF",SHUFFLE="OFF",CURRENTTYPE="OFF";
+    public  static String PLAYERSTATUS="NULL",REPEAT="OFF",SHUFFLE="OFF",CURRENTTYPE="OFF";
     public static int totalduration,currentduraiton,currentpos;
     String from;
     public static String currenttitle,currentartist,currentimageurl;
@@ -49,6 +49,10 @@ public class MusicService extends Service {
                 else if (status.equals("resume")){
                     PLAYERSTATUS="PLAYING";
                     mp.start();
+
+                }
+                else if (status.equals("start")){
+                    playsong(0);
 
                 }
 
