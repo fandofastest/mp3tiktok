@@ -1,19 +1,37 @@
 package com.example.swipevideo.fragments;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.example.swipevideo.MusicService;
 import com.example.swipevideo.R;
 import com.example.swipevideo.VideoAdapter;
-import com.example.swipevideo.VideoItem;
+import com.example.swipevideo.MusicItem;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +51,9 @@ public class HomeFragment extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+    private List<String>listvideo = new ArrayList<>();
+    VideoAdapter videoAdapter ;
+    ProgressBar progressBar;
 
     public HomeFragment() {
         // Required empty public constructor
@@ -65,6 +86,8 @@ public class HomeFragment extends Fragment {
         }
     }
 
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -75,54 +98,255 @@ public class HomeFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        ViewPager2 videoViewpager = view.findViewById(R.id.videosViewpager);
-        List<VideoItem> videoItems = new ArrayList<>();
+        progressBar=view.findViewById(R.id.videoProgressBar);
+        ViewPager2 viewPager2 = view.findViewById(R.id.videosViewpager);
+        viewPager2.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+            @Override
+            public void onPageSelected(int position) {
+                videoAdapter.notifyDataSetChanged();
+                playmusic(MusicService.listtopsong,position);
+                progressBar.setVisibility(View.VISIBLE);
+                super.onPageSelected(position);
 
-        VideoItem videoItemOne = new VideoItem();
-        videoItemOne.videoURL = "https://www.infinityandroid.com/videos/video1.mp4";
-        videoItemOne.videoTitle = "Celebration";
-        videoItemOne.videoDescription = "Celebrate who you are in your deepest heart. Love your self and the world will love you.";
-        videoItems.add(videoItemOne);
+            }
+        });
+        videoAdapter = new VideoAdapter(getContext(),MusicService.listtopsong,listvideo);
+        viewPager2.setAdapter(videoAdapter);
+       getsongs("via vallen","search");
 
-        VideoItem videoItemTwo = new VideoItem();
-        videoItemTwo.videoURL = "https://www.infinityandroid.com/videos/video2.mp4";
-        videoItemTwo.videoTitle = "Party";
-        videoItemTwo.videoDescription = "You gotta have life your way";
-        videoItems.add(videoItemTwo);
+    }
+    public void playmusic (List<MusicItem> listsong,int position){
 
-        VideoItem videoItemThree = new VideoItem();
-        videoItemThree.videoURL = "https://www.infinityandroid.com/videos/video3.mp4";
-        videoItemThree.videoTitle = "Excercise";
-        videoItemThree.videoDescription = "Whenever i feel the need to excercise, I lie down until it goes away";
-        videoItems.add(videoItemThree);
+        MusicService.currentlist=listsong;
 
-        VideoItem videoItemFour = new VideoItem();
-        videoItemFour.videoURL = "https://www.infinityandroid.com/videos/video4.mp4";
-        videoItemFour.videoTitle = "Nature";
-        videoItemFour.videoDescription = "In every walk in with nature one receives for more than seeks";
-        videoItems.add(videoItemFour);
-
-        VideoItem videoItemFive = new VideoItem();
-        videoItemFive.videoURL = "https://www.infinityandroid.com/videos/video5.mp4";
-        videoItemFive.videoTitle = "Travel";
-        videoItemFive.videoDescription = "It is better to travel well than to arrive.";
-        videoItems.add(videoItemFive);
-
-        VideoItem videoItemSix = new VideoItem();
-        videoItemSix.videoURL = "https://www.infinityandroid.com/videos/video6.mp4";
-        videoItemSix.videoTitle = "Chill";
-        videoItemSix.videoDescription = "Life is so much easier when you just chill out.";
-        videoItems.add(videoItemSix);
-
-        VideoItem videoItemSeven = new VideoItem();
-        videoItemSeven.videoURL = "https://www.infinityandroid.com/videos/video7.mp4";
-        videoItemSeven.videoTitle = "Love";
-        videoItemSeven.videoDescription = "The best thing to hold onto in life is each other.";
-        videoItems.add(videoItemSeven);
-
-        videoViewpager.setAdapter(new VideoAdapter(videoItems));
-
+        Intent intent = new Intent(getContext(), MusicService.class);
+        intent.putExtra("from","online");
+        intent.putExtra("pos",position);
+        getContext().startService(intent);
 
 
     }
+
+
+    public void playerready(){
+        progressBar.setVisibility(View.GONE);
+    }
+
+
+    public void getsongs(final String q, final String type){
+
+        String url;
+        if (type.equals("genre")){
+            url="https://api-v2.soundcloud.com/charts?genre=soundcloud:genres:"+q+"&high_tier_only=false&kind=top&limit=100&client_id=iZIs9mchVcX5lhVRyQGGAYlNPVldzAoX";
+        }
+        else{
+            url="https://api-v2.soundcloud.com/search/tracks?q="+q+"&client_id=iZIs9mchVcX5lhVRyQGGAYlNPVldzAoX&limit=100";
+
+        }
+        final JsonObjectRequest jsonObjectRequest=new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+
+//                linearLayout.setVisibility(View.GONE);
+
+                if (type.equals("genre")){
+                    try {
+                        JSONArray jsonArray1=response.getJSONArray("collection");
+
+                        for (int i = 0;i<jsonArray1.length();i++){
+                            JSONObject jsonObject1=jsonArray1.getJSONObject(i);
+                            JSONObject jsonObject=jsonObject1.getJSONObject("track");
+                            MusicItem listModalClass = new MusicItem();
+                            listModalClass.setId(jsonObject.getInt("id"));
+                            listModalClass.setTitle(jsonObject.getString("title"));
+                            listModalClass.setImageurl(jsonObject.getString("artwork_url"));
+                            listModalClass.setDuration(jsonObject.getString("full_duration"));
+                            listModalClass.setType("online");
+                            listModalClass.setArtist(q);
+
+
+
+//                        System.out.println(jsonArray3);
+
+
+                            MusicService.listtopsong.add(listModalClass);
+//
+
+
+
+//                        Toast.makeText(getActivity(),id,Toast.LENGTH_LONG).show();
+
+
+                        }
+
+
+
+
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }}
+
+
+
+
+
+
+
+
+
+                else if (type.equals("search")){
+                    try {
+                        JSONArray jsonArray1=response.getJSONArray("collection");
+
+                        for (int i = 0;i<jsonArray1.length();i++){
+                            JSONObject jsonObject=jsonArray1.getJSONObject(i);
+                            MusicItem listModalClass = new MusicItem();
+                            listModalClass.setId(jsonObject.getInt("id"));
+                            listModalClass.setTitle(jsonObject.getString("title"));
+                            listModalClass.setImageurl(jsonObject.getString("artwork_url"));
+                            listModalClass.setDuration(jsonObject.getString("full_duration"));
+                            listModalClass.setType("online");
+
+
+                            try {
+                                JSONObject jsonArray3=jsonObject.getJSONObject("publisher_metadata");
+                                listModalClass.setArtist(jsonArray3.getString("artist"));
+
+                            }
+                            catch (JSONException e){
+                                listModalClass.setArtist("Artist");
+
+                            }
+
+
+
+
+
+
+
+
+                            MusicService.listtopsong.add(listModalClass);
+//
+//                        System.out.println(jsonArray1);
+
+
+//                        Toast.makeText(getActivity(),id,Toast.LENGTH_LONG).show();
+
+
+                        }
+
+
+
+
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
+
+                videoAdapter.notifyDataSetChanged();
+//                songAdapter.notifyDataSetChanged();
+                //    System.out.println("update"+listsongModalSearch);
+
+
+
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+        Volley.newRequestQueue(getContext()).add(jsonObjectRequest);
+
+
+    }
+    public void gettopchart(){
+        String url="https://api-v2.soundcloud.com/charts?charts-top:all-music&&high_tier_only=false&kind=top&limit=100&client_id=iZIs9mchVcX5lhVRyQGGAYlNPVldzAoX";
+        JsonObjectRequest jsonObjectRequest=new JsonObjectRequest(Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+
+//                linearLayout.setVisibility(View.GONE);
+//                System.out.println(response);
+
+
+                try {
+                    JSONArray jsonArray1=response.getJSONArray("collection");
+
+                    for (int i = 0;i<jsonArray1.length();i++){
+                        JSONObject jsonObject1=jsonArray1.getJSONObject(i);
+                        JSONObject jsonObject=jsonObject1.getJSONObject("track");
+                        MusicItem musicSongOnline = new MusicItem();
+                        musicSongOnline.setId(jsonObject.getInt("id"));
+                        musicSongOnline.setTitle(jsonObject.getString("title"));
+                        musicSongOnline.setImageurl(jsonObject.getString("artwork_url"));
+                        musicSongOnline.setDuration(jsonObject.getString("full_duration"));
+                        musicSongOnline.setType("online");
+
+
+                        try {
+                            JSONObject jsonArray3=jsonObject.getJSONObject("publisher_metadata");
+                            musicSongOnline.setArtist(jsonArray3.getString("artist"));
+
+                        }
+                        catch (JSONException e){
+                            musicSongOnline.setArtist("Artist");
+
+                        }
+
+
+//                        System.out.println(jsonArray3);
+
+
+                        MusicService.listtopsong.add(musicSongOnline);
+//
+
+
+
+//                        Toast.makeText(getActivity(),id,Toast.LENGTH_LONG).show();
+
+
+                    }
+
+
+
+
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                videoAdapter.notifyDataSetChanged();
+//                songAdapter.notifyDataSetChanged();
+                //    System.out.println("update"+listsongModalSearch);
+
+
+
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });
+
+        Volley.newRequestQueue(getContext()).add(jsonObjectRequest);
+
+
+    }
+
+
+
+    private void getVideo(){
+        for (int i = 0; i < 6; i++) {
+            listvideo.add("https://www.infinityandroid.com/videos/video"+i+".mp4");
+        }
+    }
+
 }

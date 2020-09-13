@@ -6,4 +6,6 @@
 
     <color name="colorTransparent">#2A000000</color>
     <color name="coloricon">#D56A6969</color>
+    <color name="colorseek">#E1E1E1</color>
+
 </resources>

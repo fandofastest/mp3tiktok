@@ -1,9 +1,13 @@
 package com.example.swipevideo;
 
+import android.content.Context;
+import android.content.Intent;
 import android.media.MediaPlayer;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.VideoView;
@@ -11,14 +15,24 @@ import android.widget.VideoView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+
 import java.util.List;
+import java.util.Random;
 
 public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHolder> {
 
-    private List<VideoItem> videoItems;
+    private List<MusicItem> musicItems;
+    static   List<String>  listitem;
+       static ProgressBar videoProgressBar;
 
-    public VideoAdapter(List<VideoItem> videoItems) {
-        this.videoItems = videoItems;
+    Context context;
+
+    public VideoAdapter(Context context, List<MusicItem> musicItems, List<String> listitem) {
+        this.musicItems = musicItems;
+        this.listitem=listitem;
+        this.context=context;
     }
 
     @NonNull
@@ -35,54 +49,41 @@ public class VideoAdapter extends RecyclerView.Adapter<VideoAdapter.VideoViewHol
 
     @Override
     public void onBindViewHolder(@NonNull VideoViewHolder holder, int position) {
-        holder.setVideoData(videoItems.get(position));
+        MusicItem musicItem = musicItems.get(position);
+        holder.tvVideoTitle.setText(musicItem.getTitle());
+        holder.tvVideoDescription.setText(musicItem.getArtist());
+        Glide.with(context).load(musicItem.getImageurl())
+                .centerCrop()
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .into(holder.imageView);
+        Log.e("errr", String.valueOf(position));
+
+
     }
 
     @Override
     public int getItemCount() {
-        return videoItems.size();
+        return musicItems.size();
     }
 
-    static class VideoViewHolder extends RecyclerView.ViewHolder {
 
+
+     static class VideoViewHolder extends RecyclerView.ViewHolder {
+        ImageView imageView;
         VideoView videoView;
         TextView tvVideoTitle, tvVideoDescription;
-        ProgressBar videoProgressBar;
+
 
         public VideoViewHolder(@NonNull View itemView) {
             super(itemView);
-            videoView = itemView.findViewById(R.id.videoView);
+//            videoView = itemView.findViewById(R.id.videoView);
             tvVideoTitle = itemView.findViewById(R.id.tv_videoTitle);
             tvVideoDescription = itemView.findViewById(R.id.tv_videoDescription);
-            videoProgressBar = itemView.findViewById(R.id.videoProgressBar);
+            imageView=itemView.findViewById(R.id.background);
         }
 
-        void setVideoData(VideoItem videoItem){
-            tvVideoTitle.setText(videoItem.videoTitle);
-            tvVideoDescription.setText(videoItem.videoDescription);
-            videoView.setVideoPath(videoItem.videoURL);
-
-            videoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    videoProgressBar.setVisibility(View.GONE);
-                    mp.start();
-//                    float videoRatio = mp.getVideoWidth() / (float) mp.getVideoWidth();
-//                    float screenRatio = videoView.getWidth() / (float) videoView.getHeight();
-//                    float scale = videoRatio / screenRatio;
-//                    if (scale >= 1f){
-//                        videoView.setScaleX(scale);
-//                    }else {
-//                        videoView.setScaleY(1f / scale);
-//                    }
-                }
-            });
-            videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    mp.start();
-                }
-            });
-        }
     }
+
+
+
 }

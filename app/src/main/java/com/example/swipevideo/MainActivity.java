@@ -3,10 +3,17 @@ package com.example.swipevideo;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.viewpager2.widget.ViewPager2;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 
 import com.example.swipevideo.fragments.HomeFragment;
@@ -18,14 +25,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-
+    BottomNavigationView bottomNavigation;
+    HomeFragment homeFragment;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        getFragmentPage(new HomeFragment());
-        BottomNavigationView bottomNavigation = findViewById(R.id.nav_view);
+        getlocalbroadcaster();
+        homeFragment=new HomeFragment();
+        getFragmentPage(homeFragment);
+         bottomNavigation = findViewById(R.id.nav_view);
         bottomNavigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -49,6 +58,28 @@ public class MainActivity extends AppCompatActivity {
                 return getFragmentPage(fragment);
             }
         });
+
+    }
+
+    public void getlocalbroadcaster(){
+        LocalBroadcastManager.getInstance(MainActivity.this).registerReceiver(new BroadcastReceiver() {
+            @SuppressLint("RestrictedApi")
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String status = intent.getStringExtra("status");
+                if (status.equals("playing")){
+                    bottomNavigation.getMenu().getItem(0).setIcon(R.drawable.ic_baseline_pause_24);
+                    homeFragment.playerready();
+
+
+
+                }
+                else if (status.equals("pause")){
+                    bottomNavigation.getMenu().getItem(0).setIcon(R.drawable.ic_baseline_play_arrow_24);
+                }
+
+            }
+        }, new IntentFilter("musicplayer"));
 
     }
 
